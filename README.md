@@ -16,3 +16,5 @@ Standard Steps include:
   - DMR Analysis (comb-p)
 7. Annotation of DMCs and DMRs
 8. Export to Excel
+
+Added a change
