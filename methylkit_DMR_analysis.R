@@ -21,7 +21,7 @@ library(genomation)
 # ex: my.treat <- c(1,1,1,1,1,2,2,2,2,3,3)
 
 # create a covariate data frame for differential analysis (may need more than 1)
-# ex: ovar1 <- data.frame(sex=c("M","M","F","M","F","F","M"))
+# ex: covar1 <- data.frame(sex=c("M","M","F","M","F","F","M"))
 
 # canonical contigs
 # ex: sheep: cans <- c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","X","Y")
@@ -128,6 +128,13 @@ calc.DMRs <- function(my.meth, covariate=NULL, comparison, meth.diff=10, qval=0.
   png(paste0(comparison, ".sigDMR.anno.pieChart.png"))
   plotTargetAnnotation(foo, precedence=TRUE, main=paste(comparison, "sig DMR overlaps", sep=" "))
   dev.off()
+
+  # add DMR_ID column
+  myDiff.sig.df2$DMR_ID <- paste('DMR', seq(1:nrow(myDiff.sig.df2)), sep='_')
+
+  # reorder columns
+  myDiff.sig.df2 <- myDiff.sig.df2[ ,c(8,1,2,3,5,6,7)]
+  
   # export sig results
   write.table(myDiff.sig.df2,
               paste0(comparison, ".sigDMRs.txt"),
@@ -135,5 +142,83 @@ calc.DMRs <- function(my.meth, covariate=NULL, comparison, meth.diff=10, qval=0.
               col.names=TRUE,
               row.names=FALSE,
               quote=FALSE
+  )
+
+  #--------------#
+  # sig dmr beds #
+  #--------------#
+
+  # BED file containing all sig DMRs and ensembl contig format
+  # subset sig DMR results to a bed file for annotation
+  res <- myDiff.sig.df2[ ,c(2,3,4,1)]
+  res$start <- res$start - 1
+
+  # export sig DMR bed for annotation
+  write.table(res,
+              paste0(comparison, ".sigDMRs.bed"),
+	      sep="\t",
+	      col.names=FALSE,
+	      row.names=FALSE,
+	      quote=FALSE
+  )
+
+  # 3 BED files for GREAT
+  # UCSC contig format, 1 bed file of hyper only, 1 of hypo only, 1 of both
+  res$chr <- paste0("chr", res$chr)
+  write.table(res,
+              paste0(comparison, ".sigDMRs.both.bed"),
+              sep="\t",
+              col.names=FALSE,
+              row.names=FALSE,
+              quote=FALSE
+  )
+  
+  my.hyper <- myDiff.sig.df2[myDiff.sig.df2$meth.diff > 0, c(2,3,4,1)]
+  my.hyper$start <- my.hyper$start - 1
+  write.table(my.hyper,
+              paste0(comparison, ".sigDMRs.hyper.bed"),
+              sep="\t",
+              col.names=FALSE,
+              row.names=FALSE,
+              quote=FALSE
+  )
+
+  my.hypo <- myDiff.sig.df2[myDiff.sig.df2$meth.diff < 0, c(2,3,4,1)]
+  my.hypo$start <- my.hypo$start - 1
+  write.table(my.hypo,
+              paste0(comparison, ".sigDMRs.hypo.bed"),
+              sep="\t",
+              col.names=FALSE,
+              row.names=FALSE,
+              quote=FALSE
+  )
+
+
+  return(myDiff.sig.df2)
+}
+
+# FUNCTION to make a sig DMR bed file track from results dataframe
+makeBED <- function(res, name) {
+  res2 <- res[ ,c(2,3,4,1,7)]
+  res2$start <- res2$start - 1
+  res2$chr <- paste0("chr", res2$chr)
+
+  res2[ ,6] <- "."
+  res2[ ,7] <- res2$start
+  res2[ ,8] <- res2$end
+  res2[ ,9] <- ifelse(res2[ ,5] > 0, '255,0,0', ifelse(res2[ ,5] < 0, '0,0,255', '0,0,0'))
+  
+  # add track line to exported file
+  cat(paste0("track type=bed name=", name), file=paste(name, "bed", sep="."))
+  cat("\n", file=paste(name, "bed", sep="."), append=TRUE)
+
+  # export bed info
+  write.table(res2,
+              paste(name, "bed", sep="."),
+	      sep="\t",
+	      col.names=FALSE,
+	      row.names=FALSE,
+	      quote=FALSE,
+	      append=TRUE
   )
 }
