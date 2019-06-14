@@ -2,6 +2,9 @@
 
 library(methylKit)
 library(genomation)
+library(ggplot2)
+
+options(scipen = 999) # disables scientific notation
 
 #---------------------------------------#
 # Variables to change for each project: #
@@ -80,6 +83,9 @@ reorg <- function(myObj, samples, treat, win.size=1000, step.size=1000, min.per.
                             treatment=treat
   )
 
+  cpg.meth <- unite(myObj.reorg,  min.per.group=min.per.group, mc.cores=8)
+  print(paste0("Number of CpGs included in tiles: ", nrow(cpg.meth)))
+  
   # tile the reorganized object
   my.tiles <- tileMethylCounts(myObj.reorg,
                                win.size=win.size,
@@ -115,20 +121,84 @@ calc.DMRs <- function(my.meth, covariate=NULL, comparison, meth.diff=10, qval=0.
   myDiff.sig.df <- getData(myDiff.sig)
   # remove DMRs on noncanonical contigs
   myDiff.sig.df2 <- myDiff.sig.df[myDiff.sig.df$chr %in% cans, ]
+
   # read in the bed12 file
   gene.obj <- readTranscriptFeatures(bed,
 				     up.flank=3000,
 				     down.flank=0,
 				     unique.prom=FALSE
   )
+
   # get percent overlaps of sig DMRs with genic parts
   foo <- annotateWithGeneParts(as(myDiff.sig.df2, "GRanges"), gene.obj)
+
   # plot the percentage of sig DMR overlaps with promoters, exons, introns, intergenic,
   #  with precedence set as promoter > exon > intron
   png(paste0(comparison, ".sigDMR.anno.pieChart.png"))
   plotTargetAnnotation(foo, precedence=TRUE, main=paste(comparison, "sig DMR overlaps", sep=" "))
   dev.off()
 
+  #----------------------------#
+  # HYPO and HYPER SEPARATIONS #
+  #----------------------------#
+  
+  # separate hyper and hypo sig DMRs
+  myDiff.hyper <- myDiff.sig.df2[myDiff.sig.df2$meth.diff > 0, ]
+  myDiff.hypo <- myDiff.sig.df2[myDiff.sig.df2$meth.diff < 0, ]
+
+  # df for pie chart of hyper and hypo sig DMRs
+  pie.df <- data.frame(class=c("hyper", "hypo"),
+  	               percent=c(nrow(myDiff.hyper) / nrow(myDiff.sig.df2),
+		                 nrow(myDiff.hypo) / nrow(myDiff.sig.df2))
+  )
+  pie.df$label=paste0(round(as.numeric(pie.df$percent)*100, digits=0), '%')
+  
+
+  # define blank theme for prettier pie chart
+  blank_theme <- theme_minimal()+
+  theme(
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  panel.border = element_blank(),
+  panel.grid=element_blank(),
+  axis.ticks = element_blank(),
+  plot.title=element_text(size=14, face="bold")
+  )
+
+  # plot ratio of hyper vs hypo sig DMRs
+  myplot <- ggplot(pie.df, aes(x="", y=percent, fill=class)) +
+             geom_bar(width = 1, stat = "identity") +
+	     coord_polar("y", start=0) +
+	     blank_theme +
+	     theme(axis.text.x=element_blank()) +
+	     #geom_text(aes(x=1, y=pos, label=label), size = 6) +
+	     geom_text(aes(x=1, y=cumsum(percent/sum(percent)) - percent/sum(percent)/2,
+	       label=label[c(2,1)]), size=6) +  #label = paste(round(percent/sum(percent)*100),"%")), size = 6)
+	     ggtitle(paste0("Ratio of Hyper and Hypo Methylated sig DMRs\ntotal: ", nrow(myDiff.sig.df2)))
+  ggsave(filename="hyper.hypo.sigDMR.pieChart.png")
+
+  # Now, produce genic overlap pie charts for hyper and hypo DMRs separately
+  # get percent overlaps of sig hyper DMRs with genic parts
+  foo.hyper <- annotateWithGeneParts(as(myDiff.hyper, "GRanges"), gene.obj)
+
+  # plot the percentage of sig hyper DMR overlaps with promoters, exons, introns, intergenic,
+  #  with precedence set as promoter > exon > intron
+  png(paste0(comparison, ".sigDMR.hyper.anno.pieChart.png"))
+  plotTargetAnnotation(foo.hyper, precedence=TRUE, main=paste(comparison, "sig hyper DMR overlaps", sep=" "))
+  dev.off()
+
+  # get percent overlaps of sig hypo DMRs with genic parts
+  foo.hypo <- annotateWithGeneParts(as(myDiff.hypo, "GRanges"), gene.obj)
+
+  # plot the percentage of sig hypo DMR overlaps with promoters, exons, introns, intergenic,
+  #  with precedence set as promoter > exon > intron
+  png(paste0(comparison, ".sigDMR.hypo.anno.pieChart.png"))
+  plotTargetAnnotation(foo.hypo, precedence=TRUE, main=paste(comparison, "sig hypo DMR overlaps", sep=" "))
+  dev.off()
+
+  # -------------------------------#
+  # continue with both hyper and hypo export
+  
   # add DMR_ID column
   myDiff.sig.df2$DMR_ID <- paste('DMR', seq(1:nrow(myDiff.sig.df2)), sep='_')
 
