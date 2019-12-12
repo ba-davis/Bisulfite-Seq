@@ -1,7 +1,9 @@
 # Bisulfite-Seq
 Scripts related to processing of bisulfite sequencing data via [Snakemake](https://snakemake.readthedocs.io/en/stable/) and the SLURM workload manager for parallel computing.
 
-Makes use of [methylKit](https://bioconductor.org/packages/release/bioc/html/methylKit.html) for differential analysis
+Makes use of [methylKit](https://bioconductor.org/packages/release/bioc/html/methylKit.html) for differential analysis.
+
+Makes use of [conda](https://docs.conda.io/en/latest/) environment to provide relevant software.
 
 Standard Steps include:
 1. Check quality of raw data with [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
