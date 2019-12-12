@@ -18,3 +18,7 @@ Standard Steps include:
   - dimension reduction and visualization of samples, including PCA and Nonnegative Matrix Factorization (NMF) + tSNE
 9. Perform DMR analysis via methylKit to find differentially methylated regions between two groups
 10. Produce a DMR bed file track for a genome browser
+11. Produce 3 bed files per comparison for use with [GREAT](http://great.stanford.edu/public/html/) pathway analysis
+  - Both hyper and hypomethylated regions
+  - Hypermethylated regions only
+  - Hypomethylated regions only
