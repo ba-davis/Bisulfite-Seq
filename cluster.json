@@ -1,0 +1,54 @@
+{
+    "__default__":
+    {
+        "account": "davibr",
+        "mem": "30G",
+        "time": "0-24:00",
+	"partition": "exacloud",
+	"cores": "8",
+	"nodes": "1"
+    },
+    "fastqc_raw":
+    {
+	"stdout": "slurm_debug/fastqcRaw_%A.out",
+	"stderr": "slurm_debug/fastqcRaw_%A.err"
+    },
+    "trim_galore":
+    {
+	"mem": "100G",
+	"stdout": "slurm_debug/trim_%A.out",
+	"stderr": "slurm_debug/trim_%A.err"
+    },
+    "bismark_aln":
+    {
+	"mem": "150G",
+	"stdout": "slurm_debug/bismark_%A.out",
+	"stderr": "slurm_debug/bismark_%A.err"
+    },
+    "meth_extract":
+    {
+	"mem": "132G",
+	"stdout": "slurm_debug/methExtract_%A.out",
+        "stderr": "slurm_debug/methExtract_%A.err"
+    },
+    "make_can_covs":
+    {
+	"mem": "12G",
+	"stdout": "slurm_debug/canCov_%A.out",
+	"stderr": "slurm_debug/canCov_%A.err"
+    },
+    "ide":
+    {
+	"mem": "128G",
+	"cores": "16",
+	"stdout": "slurm_debug/ide_%A.out",
+	"stderr": "slurm_debug/ide_%A.err"
+    },
+    "DMR_analysis":
+    {
+	"mem": "128G",
+	"cores": "8",
+	"stdout": "slurm_debug/DMR_%A.out",
+	"stderr": "slurm_debug/DMR_%A.err"
+    }
+}
